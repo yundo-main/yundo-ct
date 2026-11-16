@@ -1,0 +1,23 @@
+# MediaMTX 설정 예시. 실행: mediamtx server/mediamtx.yml
+webrtcAddress: :8889
+webrtcAllowOrigins: ['*']          # 운영 시 강의 사이트 도메인으로 제한
+authMethod: http
+authHTTPAddress: http://localhost:8765/api/mediamtx/auth
+authHTTPExclude:
+  - action: api
+  - action: metrics
+  - action: pprof
+# --- 영상 녹화 (송출이 시작되면 자동 저장) ---
+pathDefaults:
+  record: yes
+  recordPath: ./recordings/video/%path/%Y-%m-%d_%H-%M-%S-%f%z
+  recordFormat: fmp4
+  recordPartDuration: 1s
+  recordSegmentDuration: 1h
+  recordDeleteAfter: 30d            # 30일 지난 녹화 자동 삭제 (0s면 보관)
+playback: yes                       # 다시보기용 재생 서버
+playbackAddress: :9996
+playbackAllowOrigins: ['*']
+
+paths:
+  all_others:

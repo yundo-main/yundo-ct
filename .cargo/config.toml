@@ -1,0 +1,4 @@
+# 이 프로젝트는 Google Drive 안에 있어서 빌드 산출물(수백 MB~GB)이 동기화되지 않도록 밖에 둔다.
+# 다른 PC에서는 이 경로를 바꾸거나 파일을 지우면 된다.
+[build]
+target-dir = "/Users/jarrod/.cache/yundo-ct-target"

@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>강의 다시보기</title>
+<script>try{const t=localStorage.theme;if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<style>
+:root{--bg:#f1f5f9;--panel:#fff;--ink:#0f172a;--muted:#64748b;--line:#e2e8f0;--accent:#2563eb;--accent-h:#1d4ed8;--soft:#f8fafc;--hover:#eef2f7;--head1:#16324f;--head2:#1f4e79;--shadow:0 1px 3px rgba(15,23,42,.1)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0b1220;--panel:#162033;--ink:#e5eaf3;--muted:#94a3b8;--line:#2a3750;--accent:#3b82f6;--accent-h:#2563eb;--soft:#1d2a40;--hover:#1d2a40;--head1:#0f1e33;--head2:#14304f;--shadow:0 1px 3px rgba(0,0,0,.4)}}
+:root[data-theme="dark"]{--bg:#0b1220;--panel:#162033;--ink:#e5eaf3;--muted:#94a3b8;--line:#2a3750;--accent:#3b82f6;--accent-h:#2563eb;--soft:#1d2a40;--hover:#1d2a40;--head1:#0f1e33;--head2:#14304f;--shadow:0 1px 3px rgba(0,0,0,.4)}
+*{box-sizing:border-box}
+.credit{text-align:center;color:var(--muted);font-size:12px;padding:18px 16px 24px;letter-spacing:.3px}
+body{font-family:-apple-system,"Apple SD Gothic Neo","Pretendard",system-ui,sans-serif;margin:0;background:var(--bg);color:var(--ink);font-size:14px;line-height:1.45}
+.bar{position:sticky;top:0;z-index:5;padding:10px max(16px,env(safe-area-inset-left));background:linear-gradient(90deg,var(--head1),var(--head2));color:#fff;display:flex;gap:8px;flex-wrap:wrap;align-items:center;box-shadow:0 1px 4px rgba(0,0,0,.25)}
+.bar b{margin-right:6px}
+.bar input,.bar select,.bar button{font:inherit;padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink);min-height:36px}
+.bar input{min-width:0}
+.bar button{background:var(--accent);color:#fff;border:0;cursor:pointer}
+.bar button:hover{background:var(--accent-h)}
+#wrap{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:14px;padding:14px max(14px,env(safe-area-inset-left));max-width:1500px;margin:0 auto;align-items:start}
+@media(max-width:1000px){#wrap{grid-template-columns:1fr}}
+#stage{position:relative;aspect-ratio:16/9;background:#0b1220;border-radius:12px;overflow:hidden;box-shadow:0 8px 24px rgba(15,23,42,.3)}
+#stage video,#stage canvas{position:absolute;inset:0;width:100%;height:100%}
+#stage canvas{pointer-events:none}
+#bgl{position:absolute;inset:0;display:none}
+#stage[data-bg="white"] #bgl{display:block;background:#fff}
+#stage[data-bg="green"] #bgl{display:block;background:#2d4a3e}
+#stage[data-bg="black"] #bgl{display:block;background:#111}
+#stage[data-bg="grid"] #bgl{display:block;background-color:#fff;background-image:linear-gradient(#cbd5e1 1px,transparent 1px),linear-gradient(90deg,#cbd5e1 1px,transparent 1px);background-size:5% 8.889%}
+.note{color:var(--muted);font-size:12px}
+.note input{width:76px;padding:4px 6px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--ink)}
+.side{background:var(--panel);border-radius:12px;padding:12px;max-height:75vh;overflow:auto;box-shadow:var(--shadow)}
+@media(max-width:1000px){.side{max-height:50vh}}
+.side>b{display:block;margin-bottom:4px}
+.side>div{padding:8px 6px;border-bottom:1px solid var(--line);font-size:13px;cursor:pointer;border-radius:6px}
+.side>div:hover{background:var(--hover)}
+pre{background:#0f172a;color:#e2e8f0;padding:10px;border-radius:8px;white-space:pre-wrap;font-size:12px}
+</style></head><body>
+<div class="bar"><b>다시보기</b>
+ <input id="token" placeholder="토큰(로그인 시 발급)" size="12">
+ <select id="rec"></select>
+ <input id="vid" placeholder="영상 주소(.mp4 / playback URL)" size="30">
+ <button id="load">불러오기</button></div>
+<div id="wrap">
+ <div><div id="stage"><video id="v" controls playsinline></video><div id="bgl"></div><canvas id="c"></canvas></div>
+  <p class="note">녹화 시작 버튼을 누른 시점이 이벤트의 0초입니다. 영상과 어긋나면 오프셋을 조정하세요:
+  <input id="off" type="number" value="0"> ms</p></div>
+ <div class="side"><b>타임라인</b><div id="log"></div></div>
+</div>
+<footer class="credit">Produced by yundo</footer>
+<script>
+const $=id=>document.getElementById(id);
+const cv=$("c"),ctx=cv.getContext("2d"),v=$("v");
+let events=[],idx=0;
+function fit(){cv.width=cv.clientWidth;cv.height=cv.clientHeight;redraw()}
+addEventListener("resize",fit);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+$("token").value=new URLSearchParams(location.search).get("token")||"";
+async function list(){
+ const r=await fetch("/api/recordings?token="+$("token").value);
+ if(!r.ok)return;(await r.json()).forEach(x=>{const o=document.createElement("option");
+  o.value=x.room+"/"+x.file;o.textContent=x.room+" · "+x.file;$("rec").append(o)})}
+$("token").onchange=list;list();
+$("load").onclick=async()=>{
+ const r=await fetch("/api/recordings/"+$("rec").value+"?token="+$("token").value);
+ if(!r.ok){alert("불러오기 실패");return}
+ events=(await r.text()).trim().split("\n").map(JSON.parse).filter(e=>e.type!=="REC_START"&&e.type!=="REC_STOP");
+ if($("vid").value)v.src=$("vid").value;
+ $("log").innerHTML="";idx=0;fit()};
+// 판서(획·도형·아이콘·글씨)는 기록(ops)으로 모아 두었다가 한 번에 다시 그린다. 지우개와 형광펜이 순서대로 정확히 적용된다.
+const ICON_D={check:"M5 12.5l4.5 4.5L19 7.5",x:"M6 6l12 12M18 6L6 18",star:"M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z",
+ question:"M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 1-1 1.7M12 17.5h.01",bang:"M12 5v9M12 18.5h.01",
+ heart:"M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.6-7 10-7 10z",
+ bulb:"M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z",
+ arrow:"M4 12h16M14 6l6 6-6 6",flag:"M5 21V4M5 4h11l-2 4 2 4H5",
+ smile:"M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM8.5 14.5a4.5 4.5 0 0 0 7 0M9 9.5h.01M15 9.5h.01"};
+let ops=[],cur=null,dirty=false;
+function paint(c,W,H,o){
+ if(o.k==="t"){const fs=Math.round(o.size*H);
+  c.font=`600 ${fs}px -apple-system,"Apple SD Gothic Neo",system-ui,sans-serif`;c.textBaseline="top";c.lineJoin="round";
+  c.lineWidth=Math.max(2,fs*.12);c.strokeStyle="rgba(0,0,0,.65)";c.strokeText(o.text,o.x*W,o.y*H);
+  c.fillStyle=o.color;c.fillText(o.text,o.x*W,o.y*H);return}
+ if(o.k==="i"){const sz=o.size*H,d=new Path2D(ICON_D[o.icon]||ICON_D.star);c.save();c.translate(o.x*W-sz/2,o.y*H-sz/2);c.scale(sz/24,sz/24);
+  c.lineCap="round";c.lineJoin="round";c.lineWidth=4.4;c.strokeStyle="rgba(0,0,0,.55)";c.stroke(d);c.lineWidth=2.2;c.strokeStyle=o.color;c.stroke(d);c.restore();return}
+ if(o.k==="s"){const fs=o.pts;c.save();c.lineCap="round";c.lineJoin="round";c.lineWidth=o.w*H;c.strokeStyle=o.color;
+  if(o.mode==="highlight")c.globalAlpha=.4;else if(o.mode==="erase")c.globalCompositeOperation="destination-out";
+  else if(o.mode==="dash")c.setLineDash([o.w*H*.1,o.w*H*2.2]);
+  c.beginPath();c.moveTo(fs[0].x*W,fs[0].y*H);if(fs.length===1)c.lineTo(fs[0].x*W+.01,fs[0].y*H);
+  for(let i=1;i<fs.length;i++)c.lineTo(fs[i].x*W,fs[i].y*H);c.stroke();c.restore();return}
+ c.strokeStyle=o.color;c.fillStyle=o.color;c.lineWidth=(o.w||.005)*H;c.lineCap="round";c.lineJoin="round";
+ const ax=o.a.x*W,ay=o.a.y*H,bx=o.b.x*W,by=o.b.y*H;c.beginPath();
+ if(o.kind==="rect")c.rect(Math.min(ax,bx),Math.min(ay,by),Math.abs(bx-ax),Math.abs(by-ay));
+ else if(o.kind==="ellipse")c.ellipse((ax+bx)/2,(ay+by)/2,Math.abs(bx-ax)/2,Math.abs(by-ay)/2,0,0,Math.PI*2);
+ else{c.moveTo(ax,ay);c.lineTo(bx,by);
+  if(o.kind==="arrow"){const an=Math.atan2(by-ay,bx-ax),hl=Math.max(12,W*.02);
+   for(const d of[-.5,.5]){c.moveTo(bx,by);c.lineTo(bx-hl*Math.cos(an+d),by-hl*Math.sin(an+d))}}}
+ if(o.fill&&(o.kind==="rect"||o.kind==="ellipse")){c.save();c.globalAlpha=.35;c.fill();c.restore()}
+ c.stroke()}
+function repaint(){ctx.clearRect(0,0,cv.width,cv.height);for(const o of ops)paint(ctx,cv.width,cv.height,o);dirty=false}
+function apply(e){const p=e.payload;
+ if(e.type==="BOARD_BG"){$("stage").dataset.bg=p.bg;return}
+ if(e.type==="SHAPE"){ops.push({k:"p",kind:p.kind,a:{x:p.x1,y:p.y1},b:{x:p.x2,y:p.y2},color:p.color,fill:p.fill,w:p.w});dirty=true;return}
+ if(e.type==="ICON"){ops.push({k:"i",icon:p.icon,x:p.x,y:p.y,size:p.size,color:p.color});dirty=true;return}
+ if(e.type==="TEXT"){ops.push({k:"t",x:p.x,y:p.y,text:p.text,color:p.color,size:p.size});dirty=true;return}
+ if(e.type==="DRAW"){
+  if(p.isDragging&&cur&&ops.includes(cur))cur.pts.push({x:p.x,y:p.y});
+  else{cur={k:"s",pts:[{x:p.x,y:p.y}],color:p.color,w:p.w||.005,mode:p.mode||"pen"};ops.push(cur)} // 예전 기록(굵기·종류 없음)은 기본 펜
+  dirty=true}
+ else if(e.type==="CLEAR"){ops=[];cur=null;dirty=true}
+ else{const d=document.createElement("div"),m=Math.floor(e.t/60000),s=Math.floor(e.t/1000)%60,
+   tm=`${m}:${String(s).padStart(2,"0")}`;
+  if(e.type==="SNIPPET")d.innerHTML=`<small>${tm} 코드</small><pre>${esc(p.text)}</pre>`;
+  else if(e.type==="QUESTION")d.innerHTML=`<small>${tm}</small> <b>${esc(p.name)}</b>: ${esc(p.text)}`;
+  else if(e.type==="QUIZ_START")d.innerHTML=`<small>${tm}</small> 퀴즈: ${esc(p.question)}`;
+  else if(e.type==="QUIZ_END")d.innerHTML=`<small>${tm}</small> 퀴즈 결과: ${p.tally.join(" / ")}`;
+  else if(e.type==="CHAT")d.innerHTML=`<small>${tm}</small> <b>${esc(p.name)}</b>: ${p.file?"[파일] "+esc(p.file.name):esc(p.text)}`;
+  else return;
+  d.onclick=()=>{v.currentTime=Math.max(0,(e.t+(+$("off").value))/1000)};$("log").append(d)}}
+function redraw(){ops=[];cur=null;$("stage").dataset.bg="video";repaint();$("log").innerHTML="";idx=0;sync()}
+function sync(){const now=v.currentTime*1000-(+$("off").value);
+ while(idx<events.length&&events[idx].t<=now)apply(events[idx++]);
+ if(dirty)repaint()}
+v.ontimeupdate=sync;v.onseeked=redraw;
+setInterval(()=>{if(!v.paused)sync()},100);
+</script></body></html>

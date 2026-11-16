@@ -1,0 +1,24 @@
+# 비밀 키 / 인증서
+*.key
+*.crt
+*.pem
+
+# 실행 중 생기는 데이터 (채팅 로그, 업로드, 녹화 — 개인정보 포함)
+server/chatlogs/
+server/uploads/
+server/recordings/
+recordings/
+
+# 빌드 산출물
+target/
+node_modules/
+
+# Python (legacy)
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# OS / 에디터
+.DS_Store
+.idea/

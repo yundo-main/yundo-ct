@@ -1,0 +1,1 @@
+{"default":{"identifier":"default","description":"그림판 기본 권한: 화면(웹)이 창 닫기 요청 이벤트를 받을 수 있게 한다.","local":true,"windows":["main"],"permissions":["core:default"]}}
