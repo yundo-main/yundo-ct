@@ -31,6 +31,21 @@ header b{font-size:15px;letter-spacing:.3px}
 #who:empty{display:none}
 #themeBtn{margin-left:auto;background:rgba(255,255,255,.16);border:0;color:#fff;border-radius:99px;width:34px;height:34px;font-size:15px}
 #who:not(:empty)~#themeBtn{margin-left:0}
+#helpBtn{margin-left:auto;background:rgba(255,255,255,.16);border:0;color:#fff;border-radius:99px;height:34px;padding:0 12px;font-size:13px;font-weight:600}
+#helpBtn:hover{background:rgba(255,255,255,.28)}
+#who:not(:empty)~#helpBtn{margin-left:0}
+#helpBtn~#themeBtn{margin-left:0}
+#help{position:fixed;inset:0;z-index:25;background:rgba(2,6,23,.6);display:none;align-items:flex-start;justify-content:center;padding:6vh 16px;overflow-y:auto}
+#help.show{display:flex}
+#help .card{background:var(--panel);color:var(--ink);border-radius:16px;max-width:640px;width:100%;padding:20px 22px 22px;box-shadow:0 20px 60px rgba(0,0,0,.4)}
+#help h3{margin:0 0 4px;font-size:18px;display:flex;align-items:center;justify-content:space-between}
+#help h3 button{background:var(--soft);border:1px solid var(--line);border-radius:8px;padding:4px 10px;font-size:13px}
+#help p.lead{margin:0 0 12px;color:var(--muted);font-size:13px}
+#help details{border-top:1px solid var(--line);padding:10px 0}
+#help summary{cursor:pointer;font-weight:600}
+#help ul{margin:8px 0 0;padding-left:20px;display:grid;gap:4px}
+#help code{background:var(--soft);border:1px solid var(--line);border-radius:5px;padding:0 5px;font-size:12px}
+#help[data-role="staff"] .h-student,#help[data-role="student"] .h-staff{display:none}
 #themeBtn:hover{background:rgba(255,255,255,.28)}
 /* 입장 화면 */
 #login{max-width:380px;margin:min(8vh,60px) auto 0;background:var(--panel);border-radius:16px;padding:28px 26px;display:grid;gap:12px;box-shadow:0 12px 40px rgba(15,23,42,.18);width:calc(100% - 32px)}
@@ -61,6 +76,7 @@ main{display:none;grid-template-columns:minmax(0,1fr) 360px;gap:14px;padding:14p
 #stage.texting{cursor:text}
 #stage.drawing-shape{cursor:crosshair}
 #stage.placing{cursor:copy}
+#stage.moving{cursor:move}
 #board{position:relative}
 #iconPick{position:absolute;left:122px;top:60px;z-index:6;display:none;grid-template-columns:repeat(5,40px);gap:6px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:8px;box-shadow:0 8px 24px rgba(15,23,42,.25)}
 #iconPick.show{display:grid}
@@ -74,7 +90,9 @@ main{display:none;grid-template-columns:minmax(0,1fr) 360px;gap:14px;padding:14p
 #palette .sub.show{display:block}
 @media(max-width:700px){#iconPick{left:8px;right:8px;top:auto;bottom:90px;grid-template-columns:repeat(5,1fr);width:auto}#iconPick button{width:100%}}
 #txtEdit{position:absolute;z-index:5;margin:0;padding:0 2px;border:0;outline:2px dashed #fff;outline-offset:2px;background:rgba(0,0,0,.25);font-family:inherit;line-height:1.15;min-width:80px;width:40%;max-width:90%;text-shadow:0 0 3px #000,0 0 3px #000}
-#waiting{position:absolute;inset:0;display:none;align-items:center;justify-content:center;color:#94a3b8;font-size:14px;pointer-events:none;text-align:center;padding:20px}
+#waiting{position:absolute;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;gap:8px;color:#94a3b8;font-size:14px;pointer-events:none;text-align:center;padding:20px}
+#waiting small{display:block;font-size:12px;opacity:.8;max-width:420px}
+#waiting small[hidden]{display:none}
 #waiting.show{display:flex}
 /* 판서 팔레트 */
 #palette{display:flex;flex-direction:column;gap:6px;align-items:center;width:110px;flex:none;background:var(--panel);border-radius:var(--r);padding:8px 6px;box-shadow:var(--shadow)}
@@ -95,7 +113,16 @@ main{display:none;grid-template-columns:minmax(0,1fr) 360px;gap:14px;padding:14p
  #palette button{width:auto;min-width:48px;padding:8px 10px}#palette .sw{grid-template-columns:repeat(6,28px)}#palette .sw i{width:28px;height:28px}}
 /* 송출 컨트롤 */
 #controls{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;margin-top:10px;background:var(--panel);border-radius:var(--r);padding:10px 12px;box-shadow:var(--shadow)}
-#controls .grp{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+#controls .grp{display:flex;flex-wrap:wrap;gap:6px;align-items:center;}
+#controls .grp+.grp{padding-left:14px;border-left:1px solid var(--line)}
+@media(max-width:700px){#controls .grp+.grp{padding-left:0;border-left:0}}
+#controls .grp:has(.meter):not(:has(.meter:not(.idle))){display:none} /* 송출 전에는 소리 막대를 숨겨 한 줄에 맞춘다 */
+#badges{position:absolute;z-index:6;top:10px;right:10px;display:flex;gap:6px;pointer-events:none}
+#badges span{display:none;align-items:center;gap:5px;background:rgba(220,38,38,.92);color:#fff;font-size:12px;font-weight:700;padding:4px 10px;border-radius:99px;box-shadow:0 2px 8px rgba(0,0,0,.35)}
+#badges span.show{display:inline-flex}
+#badges span::before{content:"";width:8px;height:8px;border-radius:50%;background:#fff;animation:blink 1.2s infinite}
+@keyframes blink{50%{opacity:.25}}
+@media(prefers-reduced-motion:reduce){#badges span::before{animation:none}}
 #controls .hint{font-size:12px;color:var(--muted);flex:1 1 100%}
 #controls button{border:1px solid var(--line);background:var(--soft);border-radius:9px;padding:7px 12px;font-size:13px;transition:.15s;min-height:36px}
 #controls .grp button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;width:62px;min-height:58px;padding:6px 2px;font-size:11px;line-height:1.1;white-space:nowrap} /* 팔레트와 같은 사각 아이콘 버튼 */
@@ -118,6 +145,10 @@ main{display:none;grid-template-columns:minmax(0,1fr) 360px;gap:14px;padding:14p
 #tabs button.on{color:var(--accent);border-bottom-color:var(--accent);font-weight:600}
 #tabs button.dot::after{content:"";position:absolute;top:8px;right:4px;width:8px;height:8px;border-radius:50%;background:var(--danger)}
 #panes{padding:12px;overflow-y:auto;flex:1;min-height:260px}
+@media(min-width:1001px){.side{position:relative;top:auto;align-self:stretch;height:0;min-height:100%;max-height:none}#panes{min-height:0} /* 왼쪽 열(영상+컨트롤) 높이에 맞춘다 */
+ #panes{display:flex;flex-direction:column}
+ .side section[data-tab="chat"].on{display:flex;flex-direction:column;flex:1;min-height:0}
+ .side #chat{flex:1;max-height:none;min-height:0}}
 @media(max-width:1000px){#panes{max-height:70vh}}
 .side section{display:none}
 .side section.on{display:block}
@@ -159,6 +190,7 @@ pre{background:#0f172a;color:#e2e8f0;padding:10px;border-radius:8px;white-space:
 .quiz-btn{margin:4px 4px 0 0}
 .quiz-btn.on{background:var(--ok-bg)!important;color:var(--ok)!important;border-color:var(--ok)!important}
 .teacher-only,.student-only{display:none}
+#controls.teacher-only{display:none}
 #studentBar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:10px;background:var(--panel);border-radius:var(--r);padding:10px 12px;box-shadow:var(--shadow)}
 #studentBar.student-only{display:none}
 #studentBar button{border:1px solid var(--line);background:var(--soft);border-radius:9px;padding:7px 12px;font-size:13px;min-height:36px}
@@ -215,6 +247,7 @@ pre{background:#0f172a;color:#e2e8f0;padding:10px;border-radius:8px;white-space:
 <symbol id="i-vol" viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></symbol>
 <symbol id="i-share" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/><path d="M12 13V8M9.5 10.5L12 8l2.5 2.5"/></symbol>
 <symbol id="i-shape" viewBox="0 0 24 24"><rect x="3" y="11" width="10" height="10" rx="1.5"/><circle cx="16" cy="8" r="5"/></symbol>
+<symbol id="i-move" viewBox="0 0 24 24"><path d="M12 3v18M3 12h18M12 3l-3 3M12 3l3 3M12 21l-3-3M12 21l3-3M3 12l3-3M3 12l3 3M21 12l-3-3M21 12l-3 3"/></symbol>
 <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></symbol>
 <symbol id="i-hl" viewBox="0 0 24 24"><path d="M15 4l5 5-8 8-5-5z"/><path d="M7 12l-2 5 2 2 5-2"/><path d="M4 21h10"/></symbol>
 <symbol id="i-eraser" viewBox="0 0 24 24"><path d="M20 20H8.5L3.8 15.3a2 2 0 0 1 0-2.8l8.5-8.5a2 2 0 0 1 2.8 0l5 5a2 2 0 0 1 0 2.8L12 20"/><path d="M7 11l6 6"/></symbol>
@@ -225,7 +258,7 @@ pre{background:#0f172a;color:#e2e8f0;padding:10px;border-radius:8px;white-space:
 <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></symbol>
 <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20.5 14.5A8.5 8.5 0 0 1 9.5 3.5a8.5 8.5 0 1 0 11 11z"/></symbol>
 </defs></svg>
-<header><b><svg class="i"><use href="#i-book"/></svg>강의도구</b><span id="roomLabel"></span><span id="who"></span><button id="themeBtn" title="화면 테마: 자동 / 밝게 / 어둡게" aria-label="테마 전환"></button></header>
+<header><b><svg class="i"><use href="#i-book"/></svg>강의도구</b><span id="roomLabel"></span><span id="who"></span><button id="helpBtn" type="button" aria-haspopup="dialog" title="도움말 (사용 방법, 문제 해결)">? 도움말</button><button id="themeBtn" title="화면 테마: 자동 / 밝게 / 어둡게" aria-label="테마 전환"></button></header>
 <form id="login" data-mode="student"><div class="logo"><svg class="i"><use href="#i-book"/></svg></div><h2>강의 입장</h2>
  <div id="modeTabs" role="tablist"><button type="button" data-mode="student" class="on">수강생</button><button type="button" data-mode="staff">강의자</button></div>
  <label><span id="nameLabel">이름</span><input id="name" placeholder="홍길동" required autocomplete="off"></label>
@@ -245,6 +278,7 @@ pre{background:#0f172a;color:#e2e8f0;padding:10px;border-radius:8px;white-space:
    <button id="toolText" title="글씨: 영상 위를 클릭하고 키보드로 입력, Enter로 확정"><span class="ic"><svg class="i"><use href="#i-type"/></svg></span>글씨</button>
    <button id="toolShape" title="도형: 영상 위를 드래그해서 그립니다"><span class="ic"><svg class="i"><use href="#i-shape"/></svg></span>도형</button>
    <button id="toolIcon" title="아이콘: 고른 뒤 영상 위를 클릭해서 올립니다"><span class="ic"><svg class="i"><use href="#i-star"/></svg></span>아이콘</button>
+   <button id="toolMove" title="이동: 판서한 글씨·도형·아이콘·선을 클릭해서 끌어 옮깁니다"><span class="ic"><svg class="i"><use href="#i-move"/></svg></span>이동</button>
    </div>
    <select id="penStyle" class="sub" title="펜 종류"><option value="pen">실선 펜</option><option value="dash">점선 펜</option></select>
    <select id="shapeKind" class="sub" title="도형 종류"><option value="line">선</option><option value="arrow">화살표</option><option value="rect">사각형</option><option value="ellipse">원</option><option value="rect-fill">사각형 채움</option><option value="ellipse-fill">원 채움</option></select>
@@ -276,7 +310,7 @@ pre{background:#0f172a;color:#e2e8f0;padding:10px;border-radius:8px;white-space:
   <div id="stageCol"><div id="stage"><video id="remote" autoplay playsinline></video>
    <video id="local" autoplay muted playsinline style="display:none"></video>
    <div id="boardBgLayer"></div><video id="shareV" autoplay playsinline></video><span id="shareTag"></span>
-   <canvas id="overlay"></canvas><div id="waiting">강사의 화면 송출을 기다리는 중입니다…</div></div>
+   <canvas id="overlay"></canvas><div id="badges" aria-live="polite"><span id="bPub">송출 중</span><span id="bRec">녹화 중</span></div><div id="waiting">강사의 화면 송출을 기다리는 중입니다…<small>강사가 송출을 시작하면 자동으로 나타납니다.</small><small id="waitMore" hidden>계속 안 나오면: 강의실 이름이 강사와 같은지 확인하고, 그래도 안 되면 강사에게 영상 서버(MediaMTX) 실행 여부를 확인해 달라고 하세요.</small></div></div>
   <div id="studentBar" class="student-only"><button id="shareBtn"><svg class="i"><use href="#i-share"/></svg>내 화면 공유 요청</button><span id="shareStatus">강의자가 허용하면 내 화면을 모두에게 보여 줄 수 있습니다</span></div>
   <div id="controls" class="teacher-only">
    <div class="grp"><button id="cam"><svg class="i"><use href="#i-cam"/></svg>카메라</button><button id="scr"><svg class="i"><use href="#i-monitor"/></svg>화면 공유</button>
@@ -286,7 +320,7 @@ pre{background:#0f172a;color:#e2e8f0;padding:10px;border-radius:8px;white-space:
    <select id="camSize" title="캠 크기"><option value="s">작게</option><option value="m" selected>보통</option><option value="l">크게</option></select></div>
    <div class="grp"><span class="meter idle" id="meterMic" title="마이크 입력 소리 (송출 중에만 표시)"><svg class="i"><use href="#i-mic"/></svg><b><i id="mMic"></i></b></span>
    <span class="meter idle" id="meterSys" title="화면 공유 소리 (공유 화면에 소리가 있을 때만 표시)"><svg class="i"><use href="#i-vol"/></svg><b><i id="mSys"></i></b></span></div>
-   <div class="grp"><button id="rec"><svg class="i rec"><use href="#i-rec"/></svg>녹화</button><span id="recState"></span>
+   <div class="grp recgrp"><button id="rec"><svg class="i rec"><use href="#i-rec"/></svg>녹화</button><span id="recState"></span>
    <a href="/replay" target="_blank" style="font-size:12px">다시보기</a></div>
    <span class="hint" id="toolHint">영상 위를 드래그하면 판서</span>
   </div>
@@ -326,6 +360,38 @@ pre{background:#0f172a;color:#e2e8f0;padding:10px;border-radius:8px;white-space:
   </div>
  </aside>
 </main>
+<div id="help" role="dialog" aria-modal="true" aria-labelledby="helpTitle"><div class="card">
+ <h3 id="helpTitle">도움말 <button id="helpClose" type="button">닫기 (Esc)</button></h3>
+ <p class="lead">자세한 내용은 사용 설명서(<code>docs/manual.md</code>)에 있습니다.</p>
+ <details open class="h-student"><summary>수강생: 이렇게 사용하세요</summary><ul>
+  <li>강사가 송출을 시작하면 영상이 자동으로 나타납니다. 소리가 없으면 화면을 한 번 클릭하세요.</li>
+  <li><b>채팅</b>: 받는 사람을 고르면 귓속말입니다. 클립 버튼이나 드래그로 파일(20MB까지)도 보낼 수 있습니다.</li>
+  <li><b>질문</b> 탭에서 질문을 올리고, 손들기 버튼으로 강사에게만 알릴 수 있습니다.</li>
+  <li><b>퀴즈·설문</b>: 강사가 발행하면 이 탭에서 선택합니다. 실명 설문은 강사에게 내 선택이 보입니다.</li>
+  <li><b>내 화면 공유 요청</b>: 요청하면 강사가 허용할 때 내 화면을 모두에게 보여 줄 수 있습니다.</li>
+ </ul></details>
+ <details open class="h-staff"><summary>강의자: 이렇게 사용하세요</summary><ul>
+  <li>영상 아래 <b>카메라 / 화면 공유 / 창 공유</b>로 송출합니다. 송출·녹화 중에는 영상 오른쪽 위에 빨간 배지가 표시됩니다.</li>
+  <li>영상 위를 드래그하면 판서합니다. 왼쪽 팔레트에서 도구·색·굵기·배경(영상/흰색/칠판/검정/모눈)을 고릅니다.</li>
+  <li><b>녹화</b>는 판서·퀴즈·질문을 기록합니다. 송출 직후에 눌러야 영상과 시각이 잘 맞습니다. <b>다시보기</b>에서 확인합니다.</li>
+  <li><b>퀴즈·설문</b> 탭에서 발행하고, 끝나면 CSV로 저장합니다. 수강생 화면 공유 요청은 <b>참여자</b> 탭에서 허용합니다.</li>
+  <li>카메라가 필요 없으면 <b>캠 오버레이</b> 체크를 끄고 화면 공유를 시작하세요.</li>
+ </ul></details>
+ <details><summary>영상이 안 나와요</summary><ul>
+  <li>강사가 먼저 송출을 시작했는지, 강의실(방) 이름이 같은지 확인하세요.</li>
+  <li>다른 PC에서 접속했다면 서버 PC에서 영상 서버(MediaMTX)가 실행 중이어야 하고, 방화벽에서 TCP 8889 / UDP·TCP 8189가 열려 있어야 합니다.</li>
+  <li>소리만 안 나오면 화면을 클릭하세요(브라우저 자동재생 정책).</li>
+ </ul></details>
+ <details class="h-staff"><summary>카메라·화면 공유가 안 돼요</summary><ul>
+  <li>브라우저는 <code>https</code> 또는 <code>localhost</code> 주소에서만 카메라·화면 공유를 허용합니다. 서버 PC에서 <code>http://localhost:포트</code>로 접속하세요.</li>
+  <li>주소창 자물쇠에서 카메라·마이크를 허용하세요. macOS는 시스템 설정 → 개인정보 보호 및 보안 → 화면 및 시스템 오디오 녹화에서 브라우저를 허용해야 합니다.</li>
+  <li><code>송출 실패 (403)</code>이면 강의자 탭이 아니라 수강생 탭으로 로그인한 것입니다. 다시 로그인하세요.</li>
+ </ul></details>
+ <details><summary>화면 구성</summary><ul>
+  <li>오른쪽 탭: 채팅 / 질문 / 퀴즈·설문 / 스크린샷 / 참여자. 새 소식이 있으면 탭에 빨간 점이 뜹니다.</li>
+  <li>상단 오른쪽 <b>◐</b> 버튼은 화면 테마(자동/밝게/어둡게)를 바꿉니다.</li>
+ </ul></details>
+</div></div>
 <footer class="credit">Produced by yundo</footer>
 <div id="lightbox"><img id="lbImg" alt=""><span id="lbName"></span></div>
 <div id="toast"></div>
@@ -362,9 +428,10 @@ function start(token){
  staff=role==="teacher"||role==="admin";
  $("who").textContent=`${NAME=$("name").value} · ${{teacher:"강사",admin:"관리자"}[role]||"수강생"}`;
  ROOM=$("room").value;TOKEN=token;$("roomLabel").textContent="· "+ROOM;
+ $("help").dataset.role=staff?"staff":"student";
  if(!staff)document.querySelectorAll(".student-only").forEach(e=>e.classList.remove("student-only"));
  if(staff){document.querySelectorAll(".teacher-only").forEach(e=>e.classList.remove("teacher-only"));
-  $("local").style.display="block";$("remote").style.display="none";$("stage").classList.add("staff");$("waiting").textContent="카메라·화면 공유·창 공유를 눌러 송출을 시작하세요";$("waiting").classList.add("show")}
+  $("local").style.display="block";$("remote").style.display="none";$("stage").classList.add("staff");$("waiting").textContent=window.isSecureContext?"카메라·화면 공유·창 공유를 눌러 송출을 시작하세요":"이 주소(http://IP)에서는 브라우저가 카메라·화면 공유를 막습니다. 서버 PC에서 http://localhost:"+(location.port||80)+" 로 접속하세요";$("waiting").classList.add("show")}
  else startWatch();
  const proto=location.protocol==="https:"?"wss":"ws";
  ws=new WebSocket(`${proto}://${location.host}/ws/${ROOM}?token=${token}`);
@@ -458,7 +525,7 @@ async function publish(kind){
    const screen=await navigator.mediaDevices.getDisplayMedia({video:{displaySurface:SOURCES[kind][1]},audio:true});
    stream=await buildComposite(screen); // 화면 + (선택) 캠 오버레이를 한 영상으로 합성
   }
- }catch(e){await stopPublish();$("pubState").textContent=`${SOURCES[kind][0]} 권한이 필요합니다`;return}
+ }catch(e){await stopPublish();$("pubState").textContent=window.isSecureContext?`${SOURCES[kind][0]} 권한이 필요합니다 (주소창 자물쇠에서 허용)`:"HTTPS 또는 localhost 주소에서만 송출할 수 있습니다";return}
  $("local").srcObject=stream;
  if(kind==="cam"&&stream.getAudioTracks().length){ // 카메라만 송출할 때도 마이크 게이지를 쓴다
   M.ownCtx=new AudioContext();M.ownCtx.resume();
@@ -502,12 +569,13 @@ const ICONS={check:["체크","M5 12.5l4.5 4.5L19 7.5"],x:["엑스","M6 6l12 12M1
  bulb:["전구","M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"],
  arrow:["화살표","M4 12h16M14 6l6 6-6 6"],flag:["깃발","M5 21V4M5 4h11l-2 4 2 4H5"],
  smile:["웃는 얼굴","M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM8.5 14.5a4.5 4.5 0 0 0 7 0M9 9.5h.01M15 9.5h.01"]};
+const textFont=fs=>`600 ${fs}px -apple-system,"Apple SD Gothic Neo",system-ui,sans-serif`;
 const ICON_PATHS={};
 const iconPath=n=>ICON_PATHS[n]||(ICON_PATHS[n]=new Path2D(ICONS[n][1]));
 // c: 그릴 캔버스 컨텍스트, W/H: 그 크기. 스크린샷도 같은 함수로 그린다(선 굵기는 화면 폭 기준으로 비례).
 function paint(c,W,H,o){
  if(o.k==="t"){const fs=Math.round(o.size*H);
-  c.font=`600 ${fs}px -apple-system,"Apple SD Gothic Neo",system-ui,sans-serif`;c.textBaseline="top";c.lineJoin="round";
+  c.font=textFont(fs);c.textBaseline="top";c.lineJoin="round";
   c.lineWidth=Math.max(2,fs*.12);c.strokeStyle="rgba(0,0,0,.65)";c.strokeText(o.text,o.x*W,o.y*H); // 어두운 윤곽선: 어떤 영상 위에서도 읽힘
   c.fillStyle=o.color;c.fillText(o.text,o.x*W,o.y*H);return}
  if(o.k==="i"){const sz=o.size*H;c.save();c.translate(o.x*W-sz/2,o.y*H-sz/2);c.scale(sz/24,sz/24);
@@ -531,7 +599,32 @@ function paint(c,W,H,o){
    for(const d of[-.5,.5]){c.moveTo(bx,by);c.lineTo(bx-hl*Math.cos(an+d),by-hl*Math.sin(an+d))}}}
  if(o.fill&&(o.kind==="rect"||o.kind==="ellipse")){c.save();c.globalAlpha=.35;c.fill();c.restore()}
  c.stroke()}
-function redraw(){ctx.clearRect(0,0,cv.width,cv.height);for(const o of ops)paint(ctx,cv.width,cv.height,o)}
+// ---- 이동 도구: 판서한 개체를 골라 끌어 옮긴다. 개체는 서버가 붙여 준 번호(id)로 가리킨다 ----
+let sel=null,mv=null; // sel: 선택한 개체 / mv: 끌고 있는 이동 {o, s(시작점), dx, dy, sent}
+function shiftOp(o,dx,dy){if(o.k==="p"){o.a.x+=dx;o.a.y+=dy;o.b.x+=dx;o.b.y+=dy}else if(o.k==="s")for(const q of o.pts){q.x+=dx;q.y+=dy}else{o.x+=dx;o.y+=dy}}
+function shifted(o,dx,dy){const c=JSON.parse(JSON.stringify(o));shiftOp(c,dx,dy);return c}
+function refBounds(o){const q=o.k==="p"?[o.a,o.b]:o.k==="s"?o.pts:[o];let x1=1,y1=1,x2=0,y2=0;
+ for(const r of q){x1=Math.min(x1,r.x);y1=Math.min(y1,r.y);x2=Math.max(x2,r.x);y2=Math.max(y2,r.y)}return{x1,y1,x2,y2}}
+function opBox(o){const W=cv.width,H=cv.height;
+ if(o.k==="t"){const fs=Math.round(o.size*H);ctx.save();ctx.font=textFont(fs);const w=ctx.measureText(o.text).width;ctx.restore();return{x:o.x*W,y:o.y*H,w,h:fs}}
+ if(o.k==="i"){const sz=o.size*H;return{x:o.x*W-sz/2,y:o.y*H-sz/2,w:sz,h:sz}}
+ const b=refBounds(o);return{x:b.x1*W,y:b.y1*H,w:(b.x2-b.x1)*W,h:(b.y2-b.y1)*H}}
+function distSeg(px,py,ax,ay,bx,by){const dx=bx-ax,dy=by-ay,l=dx*dx+dy*dy,t=l?Math.max(0,Math.min(1,((px-ax)*dx+(py-ay)*dy)/l)):0;return Math.hypot(px-ax-t*dx,py-ay-t*dy)}
+function pick(p){const W=cv.width,H=cv.height,px=p.x*W,py=p.y*H,tol=10;
+ for(let n=ops.length-1;n>=0;n--){const o=ops[n];if(o.id==null)continue; // 가장 위(나중에 그린) 개체부터 찾는다
+  if(o.k==="s"){const r=Math.max(tol,o.w*H/2+4),q=o.pts;let hit=q.length===1&&Math.hypot(px-q[0].x*W,py-q[0].y*H)<=r;
+   for(let i=1;i<q.length&&!hit;i++)hit=distSeg(px,py,q[i-1].x*W,q[i-1].y*H,q[i].x*W,q[i].y*H)<=r;if(hit)return o}
+  else if(o.k==="p"&&(o.kind==="line"||o.kind==="arrow")){if(distSeg(px,py,o.a.x*W,o.a.y*H,o.b.x*W,o.b.y*H)<=Math.max(tol,o.w*H/2+4))return o}
+  else{const b=opBox(o),inOuter=px>=b.x-tol&&px<=b.x+b.w+tol&&py>=b.y-tol&&py<=b.y+b.h+tol;
+   if(!inOuter)continue;
+   // 속이 빈 네모·타원은 테두리 근처만 잡아서, 그 안에 있는 다른 개체를 고를 수 있게 한다
+   const hollow=o.k==="p"&&!o.fill&&b.w>2*tol&&b.h>2*tol,inInner=px>b.x+tol&&px<b.x+b.w-tol&&py>b.y+tol&&py<b.y+b.h-tol;
+   if(!(hollow&&inInner))return o}}
+ return null}
+function redraw(){const W=cv.width,H=cv.height;ctx.clearRect(0,0,W,H);
+ for(const o of ops)paint(ctx,W,H,mv&&mv.o===o?shifted(o,mv.dx,mv.dy):o);
+ if(sel&&tool==="move"&&ops.includes(sel)){const b=opBox(mv&&mv.o===sel?shifted(sel,mv.dx,mv.dy):sel); // 선택 표시는 화면에만(스크린샷·녹화에는 들어가지 않는다)
+  ctx.save();ctx.setLineDash([6,4]);ctx.lineWidth=1.5;ctx.strokeStyle="#38bdf8";ctx.strokeRect(b.x-6,b.y-6,b.w+12,b.h+12);ctx.restore()}}
 function addOp(o){ops.push(o);if(ops.length>MAX_OPS)ops.shift();paint(ctx,cv.width,cv.height,o)}
 function fit(){const w=cv.clientWidth,h=cv.clientHeight;
  if(w&&h&&(cv.width!==w||cv.height!==h)){cv.width=w;cv.height=h;redraw()}}
@@ -541,18 +634,18 @@ function pos(e){const r=st.getBoundingClientRect();return{x:(e.clientX-r.left)/r
 // ---- 도구: 펜(드래그) / 글씨(클릭 후 키보드 입력) ----
 let tool="pen",txtEl=null,curIcon="check",dragStart=null,curStroke=null;
 const TOOL_HINT={pen:"영상 위를 드래그하면 판서 (종류·굵기는 팔레트에서)",hl:"드래그해서 형광펜으로 강조합니다",eraser:"지우고 싶은 판서 위를 드래그합니다 (영상은 지워지지 않음)",
- text:"영상 위를 클릭하고 입력 · Enter 확정 · Esc 취소",shape:"드래그해서 도형을 그립니다 (종류는 도형 아래에서 선택)",icon:"고른 아이콘을 영상 위 원하는 곳에 클릭해서 올립니다"};
-const TOOL_BTN={pen:"toolPen",hl:"toolHl",eraser:"toolEraser",text:"toolText",shape:"toolShape",icon:"toolIcon"};
+ text:"영상 위를 클릭하고 입력 · Enter 확정 · Esc 취소",shape:"드래그해서 도형을 그립니다 (종류는 도형 아래에서 선택)",move:"옮길 글씨·도형·아이콘·선을 클릭해서 끌어 놓습니다 (지우개 자국은 옮길 수 없음)",icon:"고른 아이콘을 영상 위 원하는 곳에 클릭해서 올립니다"};
+const TOOL_BTN={pen:"toolPen",hl:"toolHl",eraser:"toolEraser",text:"toolText",shape:"toolShape",icon:"toolIcon",move:"toolMove"};
 const BASE_W={pen:.005,hl:.035,eraser:.04}; // 굵기(화면 높이 대비)의 기준. 굵기 선택은 여기에 배율을 곱한다
 const STROKE_MODE={pen:()=>$("penStyle").value,hl:()=>"highlight",eraser:()=>"erase"};
 const colorMem={pen:"#ff3b30",hl:"#ffcc00"}; // 형광펜은 노랑으로 시작하고, 펜으로 돌아오면 쓰던 색을 되살린다
 const lineW=k=>(BASE_W[k]||BASE_W.pen)*+$("penW").value;
-function setTool(t){commitText();dragStart=null;curStroke=null;
+function setTool(t){commitText();dragStart=null;curStroke=null;sel=null;mv=null;
  if(tool!=="hl"&&t==="hl"){colorMem.pen=$("color").value;setColor(colorMem.hl)}
  else if(tool==="hl"&&t!=="hl"){colorMem.hl=$("color").value;setColor(colorMem.pen)}
  tool=t;
  for(const k in TOOL_BTN)$(TOOL_BTN[k]).classList.toggle("on",t===k);
- st.classList.toggle("texting",t==="text");st.classList.toggle("drawing-shape",t==="shape"||t==="eraser"||t==="hl");st.classList.toggle("placing",t==="icon");
+ st.classList.toggle("texting",t==="text");st.classList.toggle("drawing-shape",t==="shape"||t==="eraser"||t==="hl");st.classList.toggle("placing",t==="icon");st.classList.toggle("moving",t==="move");
  $("penStyle").classList.toggle("show",t==="pen");$("shapeKind").classList.toggle("show",t==="shape");$("iconPick").classList.toggle("show",t==="icon");
  $("toolHint").textContent=TOOL_HINT[t];redraw()}
 function setColor(c){$("color").value=c;document.querySelectorAll("#swatches i").forEach(i=>i.classList.toggle("on",i.dataset.c===c))}
@@ -583,11 +676,17 @@ const strokeTool=()=>tool==="pen"||tool==="hl"||tool==="eraser";
 const strokePoint=(p,dragging)=>({...p,color:tool==="eraser"?"#000000":$("color").value,isDragging:dragging,mode:STROKE_MODE[tool](),w:lineW(tool)});
 st.onpointerdown=e=>{if(!staff)return;
  if(strokeTool()){drawing=true;last=pos(e);send("DRAW",strokePoint(last,false))}
- else if(tool==="shape")dragStart=pos(e)};
+ else if(tool==="shape")dragStart=pos(e);
+ else if(tool==="move"){const p=pos(e);sel=pick(p);mv=sel?{o:sel,s:p,dx:0,dy:0,sent:false}:null;if(mv)try{st.setPointerCapture(e.pointerId)}catch(_){};redraw()}};
 st.onpointermove=e=>{
- if(drawing){send("DRAW",strokePoint(pos(e),true))}
+ if(mv&&!mv.sent){const p=pos(e),b=refBounds(mv.o); // 개체가 화면 밖으로 나가지 않게 이동량을 제한한다
+  mv.dx=Math.min(Math.max(p.x-mv.s.x,-b.x1),1-b.x2);mv.dy=Math.min(Math.max(p.y-mv.s.y,-b.y1),1-b.y2);redraw()}
+ else if(drawing){send("DRAW",strokePoint(pos(e),true))}
  else if(dragStart){redraw();paint(ctx,cv.width,cv.height,shapeOp(dragStart,pos(e)))}}; // 놓기 전에는 내 화면에만 미리 보인다
 addEventListener("pointerup",e=>{drawing=false;
+ if(mv&&!mv.sent){const{o,dx,dy}=mv;
+  if(o.id!=null&&(Math.abs(dx)>1e-4||Math.abs(dy)>1e-4)){mv.sent=true;send("MOVE",{oid:o.id,dx,dy});setTimeout(()=>{if(mv&&mv.o===o){mv=null;redraw()}},1000)} // 서버가 확인해 주면(MOVE 수신) 그때 확정한다
+  else{mv=null;redraw()}}
  if(dragStart){const a=dragStart,b=pos(e);dragStart=null;redraw();
   if(Math.hypot((b.x-a.x)*cv.width,(b.y-a.y)*cv.height)>6){const o=shapeOp(a,b);
    send("SHAPE",{kind:o.kind,x1:a.x,y1:a.y,x2:b.x,y2:b.y,color:o.color,fill:o.fill,w:o.w})}}});
@@ -595,14 +694,14 @@ $("clear").onclick=()=>send("CLEAR");
 // ---- 영상 시청: 같은 출처의 <video>로 WHEP 수신 (iframe은 화면을 캡처할 수 없어서 스크린샷이 안 된다) ----
 // path의 영상을 v에서 재생한다. 송출 전이거나 끊기면 3초마다 다시 시도하고, 돌려준 함수를 부르면 멈춘다.
 function watcher(v,path,wait){
- let on=true,pc2=null,wake=null;
+ let on=true,pc2=null,wake=null,fails=0;
  (async()=>{
   while(on){
-   pc2=null;wait&&wait(true);
+   pc2=null;wait&&wait(true,fails);
    try{
     pc2=new RTCPeerConnection();const mine=pc2;
     mine.addTransceiver("video",{direction:"recvonly"});mine.addTransceiver("audio",{direction:"recvonly"});
-    mine.ontrack=e=>{if(v.srcObject!==e.streams[0]){v.srcObject=e.streams[0];wait&&wait(false);
+    mine.ontrack=e=>{fails=0;if(v.srcObject!==e.streams[0]){v.srcObject=e.streams[0];wait&&wait(false);
       v.play().catch(()=>{v.muted=true;v.play().catch(()=>{});toast("화면을 클릭하면 소리가 켜집니다")})}};
     await mine.setLocalDescription(await mine.createOffer());
     await new Promise(r=>{if(mine.iceGatheringState==="complete")r();
@@ -612,13 +711,13 @@ function watcher(v,path,wait){
     if(on)await mine.setRemoteDescription({type:"answer",sdp:await res.text()});
     // 연결이 끊기거나 송출이 멈출 때까지 기다린다
     if(on)await new Promise(r=>{wake=r;mine.addEventListener("connectionstatechange",()=>["failed","disconnected","closed"].includes(mine.connectionState)&&r())});
-   }catch(e){}
+   }catch(e){fails++}
    if(pc2)pc2.close();v.srcObject=null;
    if(!on)break;
    await new Promise(r=>{wake=r;setTimeout(r,3000)})}
  })();
  return()=>{on=false;if(wake)wake();if(pc2)pc2.close();v.srcObject=null}}
-function startWatch(){watcher($("remote"),ROOM,w=>$("waiting").classList.toggle("show",w))}
+function startWatch(){watcher($("remote"),ROOM,(w,f)=>{$("waiting").classList.toggle("show",w);$("waitMore").hidden=!(w&&f>=5)})}
 $("stage").addEventListener("click",()=>{for(const id of["remote","shareV"]){const v=$(id);if(v.muted&&v.srcObject){v.muted=false;v.play().catch(()=>{})}}});
 // ---- 수강생 화면 공유: 요청 → 강의자 허용 → 공유 시작 ----
 // share: 서버가 알려 주는 상태 {presenter, requests(강의자만), requested(내 요청 여부)}
@@ -810,6 +909,13 @@ function showSurvey(s){surveyOpts=s.options;voted=false;$("survey").classList.re
  $("survey").querySelectorAll("button").forEach(b=>b.onclick=()=>{
   if(voted)return;voted=true;send("SURVEY_ANSWER",{choice:+b.dataset.i});b.classList.add("on")})}
 function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+// 송출·녹화 중 배지 (pubState/recState 글자가 바뀌면 따라서 켜고 끈다)
+(()=>{const upd=()=>{$("bPub").classList.toggle("show",$("pubState").textContent.startsWith("●"));$("bRec").classList.toggle("show",$("recState").textContent.startsWith("●"))};
+ const mo=new MutationObserver(upd);for(const id of["pubState","recState"])mo.observe($(id),{childList:true,characterData:true,subtree:true})})();
+// 도움말
+(()=>{const h=$("help"),open=()=>{h.classList.add("show");$("helpClose").focus()},close=()=>{h.classList.remove("show");$("helpBtn").focus()};
+ $("helpBtn").onclick=open;$("helpClose").onclick=close;h.addEventListener("click",e=>{if(e.target===h)close()});
+ document.addEventListener("keydown",e=>{if(e.key==="Escape"&&h.classList.contains("show"))close()})})();
 function toast(msg){const t=$("toast");t.textContent=msg;t.classList.add("show");
  clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove("show"),2500)}
 const IMG_EXT=/\.(png|jpe?g|gif|webp)$/i;
@@ -826,7 +932,7 @@ function on({type,payload:p}){
  if(type==="REC_STATE")setRec(p.recording);
  else if(type==="SHARE_STATE")onShareState(p);
  else if(type==="BOARD_BG")setBoardBg(p.bg);
- else if(type==="STATE"){setRec(!!p.recording);if(p.share)onShareState(p.share);setBoardBg(p.boardBg);ops.length=0;curStrokeIn=null;(p.board||[]).forEach(on);redraw();$("qs").innerHTML="";p.questions.forEach(addQ);
+ else if(type==="STATE"){setRec(!!p.recording);if(p.share)onShareState(p.share);setBoardBg(p.boardBg);ops.length=0;curStrokeIn=null;sel=null;mv=null;(p.board||[]).forEach(on);redraw();$("qs").innerHTML="";p.questions.forEach(addQ);
   (p.chat||[]).forEach(c=>c.to?addChat("dm",`${c.name} → ${c.to}`,c.text):addChat(c.name===NAME?"mine":"",c.name,c.text,c.file));
   if(p.quiz){showQuiz(p.quiz)}if(p.survey){showSurvey(p.survey);if($("svTally"))$("svTally").innerHTML=surveyTally(p.surveyTally||[])}}
  else if(type==="DRAW"){
@@ -834,11 +940,12 @@ function on({type,payload:p}){
    curStrokeIn.pts.push({x:p.x,y:p.y});
    if(curStrokeIn.mode==="highlight"||curStrokeIn.mode==="dash")redraw(); // 겹침·점선 모양을 위해 전체를 다시 그린다
    else{const n=curStrokeIn.pts.length;paint(ctx,cv.width,cv.height,{...curStrokeIn,pts:curStrokeIn.pts.slice(n-2)})}}
-  else{curStrokeIn={k:"s",pts:[{x:p.x,y:p.y}],color:p.color,w:p.w||.005,mode:p.mode||"pen"};addOp(curStrokeIn)}}
- else if(type==="SHAPE")addOp({k:"p",kind:p.kind,a:{x:p.x1,y:p.y1},b:{x:p.x2,y:p.y2},color:p.color,fill:p.fill,w:p.w});
- else if(type==="ICON")addOp({k:"i",icon:p.icon,x:p.x,y:p.y,size:p.size,color:p.color});
- else if(type==="TEXT")addOp({k:"t",x:p.x,y:p.y,text:p.text,color:p.color,size:p.size})
- else if(type==="CLEAR"){ops.length=0;ctx.clearRect(0,0,cv.width,cv.height);curStrokeIn=null}
+  else{curStrokeIn={k:"s",id:p.oid,pts:[{x:p.x,y:p.y}],color:p.color,w:p.w||.005,mode:p.mode||"pen"};addOp(curStrokeIn)}}
+ else if(type==="SHAPE")addOp({k:"p",id:p.oid,kind:p.kind,a:{x:p.x1,y:p.y1},b:{x:p.x2,y:p.y2},color:p.color,fill:p.fill,w:p.w});
+ else if(type==="ICON")addOp({k:"i",id:p.oid,icon:p.icon,x:p.x,y:p.y,size:p.size,color:p.color});
+ else if(type==="TEXT")addOp({k:"t",id:p.oid,x:p.x,y:p.y,text:p.text,color:p.color,size:p.size})
+ else if(type==="MOVE"){const o=ops.find(o=>o.id===p.oid);if(o){if(mv&&mv.o===o)mv=null;shiftOp(o,p.dx,p.dy);redraw()}}
+ else if(type==="CLEAR"){ops.length=0;ctx.clearRect(0,0,cv.width,cv.height);curStrokeIn=null;sel=null;mv=null}
  else if(type==="SNIPPET"){const d=document.createElement("div");
   d.innerHTML=`<pre>${esc(p.text)}</pre><button class="ghost" style="padding:2px 8px;font-size:11px">복사</button>`;
   d.querySelector("button").onclick=()=>navigator.clipboard.writeText(p.text);$("snips").prepend(d);ping("act")}

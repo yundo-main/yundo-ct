@@ -1,6 +1,10 @@
 # MediaMTX 설정 예시. 실행: mediamtx server/mediamtx.yml
 webrtcAddress: :8889
 webrtcAllowOrigins: ['*']          # 운영 시 강의 사이트 도메인으로 제한
+# 다른 컴퓨터에서 영상이 안 보일 때: 서버 PC의 IP를 직접 알려 주고, UDP가 막힌 망을 위해 TCP도 연다.
+# (가상머신/VPN 어댑터가 있으면 MediaMTX가 엉뚱한 IP를 알려 줄 수 있다. IP가 바뀌면 여기도 고친다)
+webrtcAdditionalHosts: [172.16.24.25]
+webrtcLocalTCPAddress: :8189
 authMethod: http
 authHTTPAddress: http://localhost:8765/api/mediamtx/auth
 authHTTPExclude:

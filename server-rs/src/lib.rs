@@ -44,7 +44,7 @@ const SHARE_SUFFIX: &str = "__share";
 
 /// 강사 전용 메시지 종류
 const TEACHER_ONLY: &[&str] = &[
-    "SHAPE", "ICON", "BOARD_BG", "SHARE_GRANT", "SHARE_DENY", "SHARE_STOP", "TEXT", "DRAW", "CLEAR", "SNIPPET", "QUIZ_START", "QUIZ_END", "QUESTION_DONE", "REC_START",
+    "SHAPE", "ICON", "MOVE", "BOARD_BG", "SHARE_GRANT", "SHARE_DENY", "SHARE_STOP", "TEXT", "DRAW", "CLEAR", "SNIPPET", "QUIZ_START", "QUIZ_END", "QUESTION_DONE", "REC_START",
     "REC_STOP", "SURVEY_START", "SURVEY_END",
 ];
 
@@ -570,6 +570,39 @@ fn clean_icon(p: &Value) -> Option<Value> {
     }))
 }
 
+/// 이동: 개체 번호와 이동량(화면 비율). 번호가 없거나 숫자가 아니면 None.
+fn clean_move(p: &Value) -> Option<Value> {
+    let oid = p.get("oid").and_then(Value::as_u64)?;
+    Some(json!({"oid": oid, "dx": num_of(p, "dx", 0.0, -1.0, 1.0), "dy": num_of(p, "dy", 0.0, -1.0, 1.0)}))
+}
+
+/// 보관 중인 판서(board)에서 번호가 같은 개체를 dx, dy만큼 옮긴다. 늦게 입장한 사람도 옮겨진 위치로 받는다.
+fn apply_move(board: &mut std::collections::VecDeque<Value>, oid: u64, dx: f64, dy: f64) {
+    fn shift(pl: &mut Value, kx: &str, ky: &str, dx: f64, dy: f64) {
+        if let Some(x) = pl[kx].as_f64() {
+            pl[kx] = json!(x + dx);
+        }
+        if let Some(y) = pl[ky].as_f64() {
+            pl[ky] = json!(y + dy);
+        }
+    }
+    for item in board.iter_mut() {
+        let ty = item["type"].as_str().unwrap_or("").to_string();
+        let pl = &mut item["payload"];
+        if pl["oid"].as_u64() != Some(oid) {
+            continue;
+        }
+        match ty.as_str() {
+            "TEXT" | "ICON" | "DRAW" => shift(pl, "x", "y", dx, dy),
+            "SHAPE" => {
+                shift(pl, "x1", "y1", dx, dy);
+                shift(pl, "x2", "y2", dx, dy);
+            }
+            _ => {}
+        }
+    }
+}
+
 fn choice_in_range(p: &Value, option_count: usize) -> Option<usize> {
     let idx = p.get("choice")?.as_i64()?;
     (0 <= idx && (idx as usize) < option_count).then_some(idx as usize)
@@ -599,6 +632,10 @@ fn handle(st: &AppState, room_id: &str, me: &Me, msg: Value) {
             None => return,
         },
         "ICON" => match clean_icon(&p) {
+            Some(v) => v,
+            None => return,
+        },
+        "MOVE" => match clean_move(&p) {
             Some(v) => v,
             None => return,
         },
@@ -640,6 +677,21 @@ fn handle(st: &AppState, room_id: &str, me: &Me, msg: Value) {
         _ => {}
     }
 
+    // 판서 개체에 번호를 붙인다(이동할 때 이 번호로 가리킨다). 지우개 획은 이동 대상이 아니다.
+    let mut p = p;
+    match t {
+        "TEXT" | "SHAPE" | "ICON" => p["oid"] = json!(room.next_oid()),
+        "DRAW" => {
+            if p["isDragging"] != json!(true) {
+                room.stroke_oid = (p["mode"] != json!("erase")).then(|| room.next_oid());
+            }
+            if let Some(o) = room.stroke_oid {
+                p["oid"] = json!(o);
+            }
+        }
+        _ => {}
+    }
+
     // 녹화 중이면 기록(스니펫은 전송되는 형태 그대로)
     if let Some(rec) = room.recorder.as_mut() {
         if t == "SNIPPET" {
@@ -654,10 +706,15 @@ fn handle(st: &AppState, room_id: &str, me: &Me, msg: Value) {
             room.board_bg = py_str(p.get("bg"));
             room.broadcast(&json!({"type": t, "payload": p}), None);
         }
+        "MOVE" => {
+            apply_move(&mut room.board, p["oid"].as_u64().unwrap_or(0), p["dx"].as_f64().unwrap_or(0.0), p["dy"].as_f64().unwrap_or(0.0));
+            room.broadcast(&json!({"type": t, "payload": p}), None);
+        }
         "DRAW" | "CLEAR" | "TEXT" | "SHAPE" | "ICON" => {
             let msg = json!({"type": t, "payload": p});
             if t == "CLEAR" {
                 room.board.clear();
+                room.stroke_oid = None;
             } else {
                 room.push_board(msg.clone());
             }

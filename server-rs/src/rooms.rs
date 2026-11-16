@@ -89,12 +89,21 @@ pub struct Room {
     /// 화면 공유를 요청하고 기다리는 수강생
     pub share_requests: Vec<String>,
     qid: u64,
+    /// 판서 개체(글씨·도형·아이콘·펜 획)에 붙이는 번호. 이동(MOVE)이 이 번호로 개체를 가리킨다.
+    oid: u64,
+    /// 지금 그리고 있는 펜 획의 번호(지우개 획은 이동할 수 없으므로 None)
+    pub stroke_oid: Option<u64>,
 }
 
 impl Room {
     pub fn next_qid(&mut self) -> u64 {
         self.qid += 1;
         self.qid
+    }
+
+    pub fn next_oid(&mut self) -> u64 {
+        self.oid += 1;
+        self.oid
     }
 
     pub fn push_board(&mut self, item: Value) {

@@ -98,12 +98,15 @@ function paint(c,W,H,o){
 function repaint(){ctx.clearRect(0,0,cv.width,cv.height);for(const o of ops)paint(ctx,cv.width,cv.height,o);dirty=false}
 function apply(e){const p=e.payload;
  if(e.type==="BOARD_BG"){$("stage").dataset.bg=p.bg;return}
- if(e.type==="SHAPE"){ops.push({k:"p",kind:p.kind,a:{x:p.x1,y:p.y1},b:{x:p.x2,y:p.y2},color:p.color,fill:p.fill,w:p.w});dirty=true;return}
- if(e.type==="ICON"){ops.push({k:"i",icon:p.icon,x:p.x,y:p.y,size:p.size,color:p.color});dirty=true;return}
- if(e.type==="TEXT"){ops.push({k:"t",x:p.x,y:p.y,text:p.text,color:p.color,size:p.size});dirty=true;return}
+ if(e.type==="SHAPE"){ops.push({k:"p",id:p.oid,kind:p.kind,a:{x:p.x1,y:p.y1},b:{x:p.x2,y:p.y2},color:p.color,fill:p.fill,w:p.w});dirty=true;return}
+ if(e.type==="ICON"){ops.push({k:"i",id:p.oid,icon:p.icon,x:p.x,y:p.y,size:p.size,color:p.color});dirty=true;return}
+ if(e.type==="TEXT"){ops.push({k:"t",id:p.oid,x:p.x,y:p.y,text:p.text,color:p.color,size:p.size});dirty=true;return}
+ if(e.type==="MOVE"){const o=ops.find(o=>o.id===p.oid);
+  if(o){if(o.k==="p"){o.a.x+=p.dx;o.a.y+=p.dy;o.b.x+=p.dx;o.b.y+=p.dy}else if(o.k==="s")for(const q of o.pts){q.x+=p.dx;q.y+=p.dy}else{o.x+=p.dx;o.y+=p.dy}}
+  dirty=true;return}
  if(e.type==="DRAW"){
   if(p.isDragging&&cur&&ops.includes(cur))cur.pts.push({x:p.x,y:p.y});
-  else{cur={k:"s",pts:[{x:p.x,y:p.y}],color:p.color,w:p.w||.005,mode:p.mode||"pen"};ops.push(cur)} // 예전 기록(굵기·종류 없음)은 기본 펜
+  else{cur={k:"s",id:p.oid,pts:[{x:p.x,y:p.y}],color:p.color,w:p.w||.005,mode:p.mode||"pen"};ops.push(cur)} // 예전 기록(굵기·종류 없음)은 기본 펜
   dirty=true}
  else if(e.type==="CLEAR"){ops=[];cur=null;dirty=true}
  else{const d=document.createElement("div"),m=Math.floor(e.t/60000),s=Math.floor(e.t/1000)%60,

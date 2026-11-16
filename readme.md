@@ -18,6 +18,11 @@ Produced by yundo
 ## 실행
 
 ```bash
+# 한 번에 백그라운드 실행 / 종료 (서버 + MediaMTX)
+scripts/start.sh
+scripts/stop.sh
+
+# 또는 각각 직접 실행
 # 강의도구 서버 (프로젝트 루트에서) → http://localhost:8765
 cargo run --release --manifest-path server-rs/Cargo.toml
 mediamtx server/mediamtx.yml            # 영상 송출·시청용, 별도 터미널 (brew install mediamtx)
@@ -37,6 +42,7 @@ cargo test --manifest-path paint-rs/src-tauri/Cargo.toml   # 그림판 Rust 단�
 
 ## 문서
 
+- 사용 설명서·문제 해결: [docs/manual.md](docs/manual.md)
 - 개발 기록: [docs/devlog.md](docs/devlog.md), 로드맵: [docs/roadmap.md](docs/roadmap.md)
 - 서버 API·메시지 규약: [docs/server-api.md](docs/server-api.md)
 - 이전 Python 코드를 다시 실행하는 방법: [docs/legacy.md](docs/legacy.md)

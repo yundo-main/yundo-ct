@@ -138,12 +138,12 @@ async fn text_tool() {
     let msg = recv(&mut sw).await;
     recv(&mut tw).await;
     assert_eq!(msg["type"], "TEXT");
-    assert_eq!(msg["payload"], json!({"x": 1.0, "y": 0.0, "text": "가".repeat(200), "color": "#ff3b30", "size": 0.15}));
+    assert_eq!(msg["payload"], json!({"x": 1.0, "y": 0.0, "text": "가".repeat(200), "color": "#ff3b30", "size": 0.15, "oid": 1}));
     // 빈 글자는 무시, 정상 값은 그대로
     send(&mut tw, json!({"type": "TEXT", "payload": {"x": 0.5, "y": 0.5, "text": "   "}})).await;
     send(&mut tw, json!({"type": "TEXT", "payload": {"x": 0.25, "y": 0.5, "text": "안녕", "color": "#00ff00", "size": 0.05}})).await;
     let msg = recv(&mut sw).await;
-    assert_eq!(msg["payload"], json!({"x": 0.25, "y": 0.5, "text": "안녕", "color": "#00ff00", "size": 0.05}));
+    assert_eq!(msg["payload"], json!({"x": 0.25, "y": 0.5, "text": "안녕", "color": "#00ff00", "size": 0.05, "oid": 2}));
 }
 
 #[tokio::test]
@@ -524,10 +524,10 @@ async fn shapes_and_icons() {
     send(&mut tw, json!({"type": "SHAPE", "payload": {"kind": "arrow", "x1": -3, "y1": 0.2, "x2": 9, "y2": 0.8, "color": "red", "fill": "yes"}})).await;
     let m = recv(&mut sw).await;
     assert_eq!(m["type"], "SHAPE");
-    assert_eq!(m["payload"], json!({"kind": "arrow", "x1": 0.0, "y1": 0.2, "x2": 1.0, "y2": 0.8, "color": "#ff3b30", "fill": false, "w": 0.005}));
+    assert_eq!(m["payload"], json!({"kind": "arrow", "x1": 0.0, "y1": 0.2, "x2": 1.0, "y2": 0.8, "color": "#ff3b30", "fill": false, "w": 0.005, "oid": 1}));
     recv(&mut tw).await;
     send(&mut tw, json!({"type": "ICON", "payload": {"icon": "star", "x": 0.3, "y": 0.4, "size": 5, "color": "#00ff00"}})).await;
-    assert_eq!(recv(&mut sw).await["payload"], json!({"icon": "star", "x": 0.3, "y": 0.4, "size": 0.4, "color": "#00ff00"}));
+    assert_eq!(recv(&mut sw).await["payload"], json!({"icon": "star", "x": 0.3, "y": 0.4, "size": 0.4, "color": "#00ff00", "oid": 2}));
 }
 
 #[tokio::test]
@@ -539,7 +539,7 @@ async fn draw_modes_and_width() {
     send(&mut tw, json!({"type": "DRAW", "payload": {"x": 2, "y": 0.5, "color": "#ffcc00", "isDragging": true, "mode": "highlight", "w": 0.035}})).await;
     assert_eq!(recv(&mut tw).await["payload"], json!({"x": 1.0, "y": 0.5, "color": "#ffcc00", "isDragging": true, "mode": "highlight", "w": 0.035}));
     send(&mut tw, json!({"type": "DRAW", "payload": {"x": 0.1, "y": 0.1, "color": "red", "mode": "<b>", "w": 99}})).await;
-    assert_eq!(recv(&mut tw).await["payload"], json!({"x": 0.1, "y": 0.1, "color": "#ff3b30", "isDragging": false, "mode": "pen", "w": 0.2}));
+    assert_eq!(recv(&mut tw).await["payload"], json!({"x": 0.1, "y": 0.1, "color": "#ff3b30", "isDragging": false, "mode": "pen", "w": 0.2, "oid": 1}));
     send(&mut tw, json!({"type": "DRAW", "payload": {"x": 0.3, "y": 0.3, "mode": "erase", "w": 0}})).await;
     assert_eq!(recv(&mut tw).await["payload"]["w"], 0.001);
 }
@@ -598,4 +598,56 @@ async fn poll_results_saved() {
     assert_eq!(rows[0]["votes"], json!({"kim": 1}));
     assert_eq!(rows[1]["kind"], "quiz");
     assert_eq!(rows[1]["question"], "1+1=2?");
+}
+
+#[tokio::test]
+async fn move_objects() {
+    let s = start().await;
+    let (t, k) = (s.login("teacher", "teacher").await, s.login("kim", "").await);
+    let mut tw = s.connect("mv1", &t).await;
+    drain(&mut tw, 2).await;
+    let mut sw = s.connect("mv1", &k).await;
+    drain(&mut tw, 1).await;
+    drain(&mut sw, 2).await;
+    // 개체마다 번호(oid)가 붙는다: 글씨 1, 도형 2, 펜 획 3(이어지는 점도 같은 번호), 지우개 획은 번호 없음
+    send(&mut tw, json!({"type": "TEXT", "payload": {"x": 0.2, "y": 0.2, "text": "안녕"}})).await;
+    assert_eq!(recv(&mut sw).await["payload"]["oid"], 1);
+    send(&mut tw, json!({"type": "SHAPE", "payload": {"kind": "rect", "x1": 0.1, "y1": 0.1, "x2": 0.3, "y2": 0.3}})).await;
+    assert_eq!(recv(&mut sw).await["payload"]["oid"], 2);
+    send(&mut tw, json!({"type": "DRAW", "payload": {"x": 0.5, "y": 0.5, "isDragging": false}})).await;
+    assert_eq!(recv(&mut sw).await["payload"]["oid"], 3);
+    send(&mut tw, json!({"type": "DRAW", "payload": {"x": 0.6, "y": 0.6, "isDragging": true}})).await;
+    assert_eq!(recv(&mut sw).await["payload"]["oid"], 3);
+    send(&mut tw, json!({"type": "DRAW", "payload": {"x": 0.7, "y": 0.7, "isDragging": false, "mode": "erase"}})).await;
+    assert!(recv(&mut sw).await["payload"].get("oid").is_none());
+    drain(&mut tw, 5).await;
+
+    // 수강생은 이동할 수 없다
+    send(&mut sw, json!({"type": "MOVE", "payload": {"oid": 1, "dx": 0.1, "dy": 0.1}})).await;
+    assert_eq!(recv(&mut sw).await["type"], "ERROR");
+    // 번호가 없거나 숫자가 아니면 무시, 이동량은 -1~1로 제한
+    send(&mut tw, json!({"type": "MOVE", "payload": {"dx": 0.1}})).await;
+    send(&mut tw, json!({"type": "MOVE", "payload": {"oid": "x", "dx": 0.1}})).await;
+    send(&mut tw, json!({"type": "MOVE", "payload": {"oid": 2, "dx": 0.25, "dy": -9}})).await;
+    let m = recv(&mut sw).await;
+    assert_eq!(m["type"], "MOVE");
+    assert_eq!(m["payload"], json!({"oid": 2, "dx": 0.25, "dy": -1.0}));
+    recv(&mut tw).await;
+
+    // 늦게 입장한 사람은 옮겨진 위치를 받는다(도형 2번: x +0.25, y -1.0)
+    send(&mut tw, json!({"type": "MOVE", "payload": {"oid": 3, "dx": 0.1, "dy": 0.0}})).await;
+    recv(&mut tw).await;
+    let mut late = s.connect("mv1", &k).await;
+    recv(&mut late).await;
+    let state = recv(&mut late).await;
+    let board = state["payload"]["board"].as_array().unwrap();
+    let shape = board.iter().find(|b| b["type"] == "SHAPE").unwrap();
+    assert_eq!(shape["payload"]["x1"], 0.35);
+    assert_eq!(shape["payload"]["y1"], -0.9);
+    let strokes: Vec<&Value> = board.iter().filter(|b| b["payload"]["oid"] == 3).collect();
+    assert_eq!(strokes.len(), 2);
+    assert_eq!(strokes[0]["payload"]["x"], 0.6);
+    assert_eq!(strokes[1]["payload"]["x"], 0.7);
+    let text = board.iter().find(|b| b["type"] == "TEXT").unwrap();
+    assert_eq!(text["payload"]["x"], 0.2); // 옮기지 않은 개체는 그대로
 }

@@ -36,6 +36,7 @@ cargo test --manifest-path server-rs/Cargo.toml
 | type | 보내는 쪽 | 설명 |
 |---|---|---|
 | DRAW / CLEAR | 강사 | 정규화 좌표(0~1) 판서, 전원에게 전달 |
+| MOVE | 강사 | 판서 개체(글씨·도형·아이콘·펜 획)를 `{oid, dx, dy}`만큼 이동(화면 비율, -1~1). 서버가 TEXT/SHAPE/ICON/DRAW(펜)에 붙여 주는 `oid`로 개체를 가리키며, 보관 중인 판서도 옮겨서 늦게 입장한 사람은 옮겨진 위치를 받는다. 지우개 획에는 `oid`가 없어 옮길 수 없다 |
 | SNIPPET | 강사 | 코드 블록 + 복사 버튼 |
 | QUIZ_START / QUIZ_END | 강사 | OX 퀴즈 발행/종료 |
 | QUIZ_ANSWER | 수강생 | 선택 인덱스, 집계는 강사에게만 QUIZ_RESULT |
